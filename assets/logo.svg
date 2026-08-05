@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" width="200" height="60">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00D4AA;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7C5CFC;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#00D4AA;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7C5CFC;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <g transform="translate(10, 5)">
+    <rect x="0" y="8" width="6" height="28" rx="3" fill="url(#grad1)" opacity="0.5"/>
+    <rect x="10" y="2" width="6" height="40" rx="3" fill="url(#grad1)" opacity="0.8"/>
+    <rect x="20" y="5" width="6" height="34" rx="3" fill="url(#grad1)"/>
+    <rect x="30" y="10" width="6" height="24" rx="3" fill="url(#grad1)" opacity="0.6"/>
+    <rect x="40" y="15" width="6" height="14" rx="3" fill="url(#grad1)" opacity="0.4"/>
+    <line x1="52" y1="30" x2="68" y2="30" stroke="url(#grad2)" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="72" cy="30" r="4" fill="none" stroke="url(#grad2)" stroke-width="2"/>
+    <polyline points="76,30 82,24 88,36 94,30 100,30" fill="none" stroke="url(#grad2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="112" y="28" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700" fill="#E8ECF4">Transcribe</text>
+    <text x="112" y="48" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="400" fill="url(#grad1)">AI</text>
+  </g>
+</svg>

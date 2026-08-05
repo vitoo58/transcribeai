@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TranscribeAI — Transcribe audio to text in minutes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: { 900: '#0B0E1A', 800: '#131829', 700: '#1A1F35' },
+            mint: { 400: '#00D4AA', 500: '#10B981' },
+            violet: { 500: '#7C5CFC' },
+            slate: { 300: '#E8ECF4', 400: '#94A3B8', 500: '#6B7A99' }
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: #0B0E1A; color: #E8ECF4; overflow-x: hidden; }
+    .glass { background: rgba(19, 24, 41, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.06); }
+    .glass-card { background: rgba(19, 24, 41, 0.5); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; }
+    .gradient-text { background: linear-gradient(135deg, #00D4AA, #7C5CFC); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .gradient-btn { background: linear-gradient(135deg, #00D4AA, #10B981); color: #0B0E1A; font-weight: 600; border: none; border-radius: 12px; padding: 14px 32px; cursor: pointer; transition: all 0.3s ease; font-size: 16px; }
+    .gradient-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0, 212, 170, 0.3); }
+    .gradient-btn-outline { background: transparent; color: #00D4AA; border: 1.5px solid #00D4AA; border-radius: 12px; padding: 14px 32px; cursor: pointer; transition: all 0.3s ease; font-size: 16px; font-weight: 500; }
+    .gradient-btn-outline:hover { background: rgba(0, 212, 170, 0.1); transform: translateY(-2px); }
+    .wave-bar { display: inline-block; width: 4px; margin: 0 2px; border-radius: 4px; background: linear-gradient(to top, #00D4AA, #7C5CFC); animation: wave 1.2s ease-in-out infinite; }
+    .wave-bar:nth-child(1) { height: 20px; animation-delay: 0s; }
+    .wave-bar:nth-child(2) { height: 35px; animation-delay: 0.1s; }
+    .wave-bar:nth-child(3) { height: 50px; animation-delay: 0.2s; }
+    .wave-bar:nth-child(4) { height: 35px; animation-delay: 0.3s; }
+    .wave-bar:nth-child(5) { height: 20px; animation-delay: 0.4s; }
+    .wave-bar:nth-child(6) { height: 45px; animation-delay: 0.5s; }
+    .wave-bar:nth-child(7) { height: 30px; animation-delay: 0.6s; }
+    @keyframes wave { 0%, 100% { transform: scaleY(0.5); opacity: 0.5; } 50% { transform: scaleY(1); opacity: 1; } }
+    .drop-zone { border: 2px dashed rgba(0, 212, 170, 0.3); border-radius: 16px; padding: 48px; text-align: center; transition: all 0.3s ease; cursor: pointer; }
+    .drop-zone:hover, .drop-zone.dragover { border-color: #00D4AA; background: rgba(0, 212, 170, 0.05); }
+    .pricing-card { transition: all 0.3s ease; position: relative; overflow: hidden; }
+    .pricing-card:hover { transform: translateY(-4px); box-shadow: 0 20px 60px rgba(0, 212, 170, 0.1); }
+    .pricing-card.popular { border-color: rgba(0, 212, 170, 0.4); }
+    .pricing-card.popular::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #00D4AA, #7C5CFC); }
+    .step-number { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; }
+    .faq-item { border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; }
+    .faq-answer.open { max-height: 200px; padding-top: 16px; padding-bottom: 24px; }
+    .lang-toggle { display: flex; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 3px; }
+    .lang-toggle button { padding: 6px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; border: none; background: transparent; color: #94A3B8; cursor: pointer; transition: all 0.2s; }
+    .lang-toggle button.active { background: rgba(0, 212, 170, 0.15); color: #00D4AA; }
+    .theme-toggle { width: 44px; height: 24px; border-radius: 12px; background: rgba(255,255,255,0.1); position: relative; cursor: pointer; border: none; transition: background 0.3s; }
+    .theme-toggle .dot { width: 18px; height: 18px; border-radius: 50%; background: #00D4AA; position: absolute; top: 3px; left: 3px; transition: transform 0.3s; }
+    .theme-toggle.light .dot { transform: translateX(20px); background: #F59E0B; }
+    .theme-toggle.light { background: rgba(245, 158, 11, 0.2); }
+    .toast { position: fixed; bottom: 32px; right: 32px; padding: 16px 24px; border-radius: 12px; background: #131829; border: 1px solid rgba(0, 212, 170, 0.3); color: #E8ECF4; font-size: 14px; z-index: 1000; transform: translateY(100px); opacity: 0; transition: all 0.4s ease; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .status-dot.received { background: #6B7A99; }
+    .status-dot.processing { background: #F59E0B; animation: pulse 1.5s infinite; }
+    .status-dot.ready { background: #00D4AA; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .feature-check { color: #00D4AA; margin-right: 8px; }
+    .scroll-reveal { opacity: 0; transform: translateY(30px); transition: all 0.6s ease; }
+    .scroll-reveal.visible { opacity: 1; transform: translateY(0); }
+    @media (max-width: 768px) {
+      .hero-title { font-size: 2rem !important; }
+      .hero-subtitle { font-size: 1rem !important; }
+      .pricing-grid { grid-template-columns: 1fr !important; }
+      .how-grid { grid-template-columns: 1fr !important; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="glass fixed top-0 left-0 right-0 z-50 px-6 py-4">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      <a href="#" class="flex items-center gap-2">
+        <img src="assets/logo.svg" alt="TranscribeAI" width="32" height="32" />
+        <span class="font-bold text-lg text-slate-300">TranscribeAI</span>
+      </a>
+      <div class="hidden md:flex items-center gap-8">
+        <a href="#how" class="text-sm text-slate-400 hover:text-slate-300 transition" data-i18n="nav_how">How It Works</a>
+        <a href="#pricing" class="text-sm text-slate-400 hover:text-slate-300 transition" data-i18n="nav_pricing">Pricing</a>
+        <a href="#upload" class="text-sm text-slate-400 hover:text-slate-300 transition" data-i18n="nav_upload">Upload</a>
+        <button class="gradient-btn text-sm py-2 px-5" onclick="location.href='#upload'" data-i18n="nav_upload">Upload</button>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="lang-toggle">
+          <button id="lang-en" class="active" onclick="setLanguage('en')">EN</button>
+          <button id="lang-es" onclick="setLanguage('es')">ES</button>
+        </div>
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">
+          <div class="dot"></div>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <section class="min-h-screen flex items-center justify-center pt-20 px-6">
+    <div class="max-w-4xl mx-auto text-center">
+      <div class="flex justify-center mb-8">
+        <div class="flex items-end h-16 gap-1">
+          <span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span>
+        </div>
+      </div>
+      <h1 class="hero-title text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6" data-i18n="hero_title">Transcribe audio to text in minutes</h1>
+      <p class="hero-subtitle text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10" data-i18n="hero_subtitle">AI-powered transcription for podcasts, meetings, and interviews. Fast, accurate, and affordable.</p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <button class="gradient-btn text-base" onclick="location.href='#upload'" data-i18n="hero_cta_upload">Upload your audio</button>
+        <button class="gradient-btn-outline text-base" onclick="location.href='#pricing'" data-i18n="hero_cta_pricing">View pricing</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" class="py-24 px-6">
+    <div class="max-w-6xl mx-auto">
+      <h2 class="text-3xl md:text-4xl font-bold text-center mb-16 scroll-reveal" data-i18n="how_title">How It Works</h2>
+      <div class="grid md:grid-cols-4 gap-8">
+        <div class="glass-card p-8 text-center scroll-reveal">
+          <div class="step-number bg-navy-700 text-mint-400 mb-6 mx-auto">1</div>
+          <h3 class="font-semibold text-lg mb-3" data-i18n="how_step1_title">Upload your file</h3>
+          <p class="text-slate-400 text-sm leading-relaxed" data-i18n="how_step1_desc">Drag and drop your audio file or click to browse. Supports MP3, WAV, M4A, and more.</p>
+        </div>
+        <div class="glass-card p-8 text-center scroll-reveal">
+          <div class="step-number bg-navy-700 text-mint-400 mb-6 mx-auto">2</div>
+          <h3 class="font-semibold text-lg mb-3" data-i18n="how_step2_title">AI processes it</h3>
+          <p class="text-slate-400 text-sm leading-relaxed" data-i18n="how_step2_desc">Our AI transcribes your audio with 99%+ accuracy in seconds.</p>
+        </div>
+        <div class="glass-card p-8 text-center scroll-reveal">
+          <div class="step-number bg-navy-700 text-mint-400 mb-6 mx-auto">3</div>
+          <h3 class="font-semibold text-lg mb-3" data-i18n="how_step3_title">Review & edit</h3>
+          <p class="text-slate-400 text-sm leading-relaxed" data-i18n="how_step3_desc">Review the transcript, make corrections, and export in your preferred format.</p>
+        </div>
+        <div class="glass-card p-8 text-center scroll-reveal">
+          <div class="step-number bg-navy-700 text-mint-400 mb-6 mx-auto">4</div>
+          <h3 class="font-semibold text-lg mb-3" data-i18n="how_step4_title">Download transcript</h3>
+          <p class="text-slate-400 text-sm leading-relaxed" data-i18n="how_step4_desc">Get your transcript in TXT, DOCX, or SRT format instantly.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pricing" class="py-24 px-6">
+    <div class="max-w-6xl mx-auto">
+      <h2 class="text-3xl md:text-4xl font-bold text-center mb-4 scroll-reveal" data-i18n="pricing_title">Simple, transparent pricing</h2>
+      <p class="text-center text-slate-400 mb-12 scroll-reveal">Choose the plan that fits your needs</p>
+      <div class="pricing-grid grid md:grid-cols-3 gap-8">
+        <div class="glass-card pricing-card p-8 scroll-reveal">
+          <h3 class="text-xl font-semibold mb-2" data-i18n="pricing_basic_title">Basic</h3>
+          <div class="flex items-baseline gap-1 mb-6"><span class="text-4xl font-bold gradient-text" data-i18n="pricing_basic_price">$15</span><span class="text-slate-400 text-sm" data-i18n="pricing_basic_price_unit">/hour</span></div>
+          <ul class="space-y-3 mb-8">
+            <li class="text-sm text-slate-300 flex items-center"><span class="feature-check">✓</span><span data-i18n="pricing_basic_features.0">Up to 2 hours per order</span></li>
+            <li class="text-sm text-slate-300 flex items-center"><span class="feature-check">✓</span><span data-i18n="pricing_basic_features.1">Standard accuracy (95%+)</span></li>
+            <li class="text-sm text-slate-300 flex items-center"><span class="feature-check">✓</span><span data-i18n="pricing_basic_features.2">TXT format</span></li>
+            <li class="text-sm text-slate-300 flex items-center"><span class="feature-check">✓</span><span data-i18n="pricing_basic_features.3">72-hour delivery</span></li>
+            <li class="text-sm text-slate-300 flex items-center"><span class="feature-check">✓</span><span data-i18n="pricing_basic_features.4">Email support</span></li>
+          </ul>
+          <button class="gradient-btn w-full text-sm py-3" data-i18n="pricing_cta">Get started</button>
+        </div>
+        <div class="glass-card pricing-card popular p-8 scroll-reveal">
+          <div class="text-center mb-2"><span class="inline-block bg-mint-400/10 text-mint-400 text-xs font-semibold px-3 py-1 rounded-full" data-i18n="pricing_standard_title">Standard</span></div>
+          <h3 class="text-xl font-semibold mb-2 text-center" data-i18n="pricing_standard_title">Standard</h3>
+          <div class="flex items-baseline gap-1 mb-6 justify-center"><span class="text-4xl font-bold gradient-text" data-i18n="pricing_standard_price">$30</span><span class="text-slate-400 text-sm" data-i18n="pricing_standard_price_unit">/hour</span></div>
+          <ul class="space-y-3 mb-8">
+            <li class="text-sm text-slate-300 flex items-center"><span class="feature-check">✓</span><span data-i18n="pricing_standard_features.0">Up to 10 hours per order</span></li>
+            <li class="text-sm text-slate-300 flex items-center"><span class="feature-check">✓</span><span data-i18n="pricing_standard_features.1">High accuracy (98%+)</span></li>
+            <li class="text-sm text-slate-300 flex items-center"><span class="feature-check">✓</span><span data-i18n="pricing_standard_features.2">TXT, DOCX formats</span></li>
+            <li class="text-sm text-slate-300 flex items-center"><span class="feature-check">✓</span><span data-i18n="pricing_standard_features.3">48-hour delivery</span></li>
+            <li class="text-sm text-slate-300 flex items-center"><span class="feature-check">✓</span><span data-i18n="pricing_standard_features.4">Priority support</span></li>
+            <li class="text-sm text-slate-300 flex items-center"><span class="feature-check">✓</span><span data-i18n="pricing_standard_features.5">Speaker identification</span></li>
+          </ul>
+          <button class="gradient-btn w-full text-sm py-3" data-i18n="pricing_cta">Get started</button>
+        </div>
+        <div class="glass-card pricing-card p-8 scroll-reveal">
+          <h3 class="text-xl font-semibold mb-2" data-i18n="pricing_premium_title">Premium</h3>
+          <div class="flex items-baseline gap-1 mb-6 justify-center"><span class="text-4xl font-bold gradient-text" data-i18n="pricing_premium_price">$60</span><span class="text-slate-400 text-sm" data-i18n="pricing_premium_price_unit">/hour</span></div>
+          <ul class="space-y-3 mb-8">
+            <li class="text-sm text-slate-300 flex items-center"><span class="feature-check">✓</span><span data-i18n="pricing_premium_features.0">Unlimited hours</span></li>
+            <li class="text-sm text-slate-300 flex items-center"><span class="feature-check">✓</span><span data-i18n="pricing_premium_features.1">Highest accuracy (99%+)</span></li>
+            <li class="text-sm text-slate-300 flex items-center"><span class="feature-check">✓</span><span data-i18n="pricing_premium_features.2">TXT, DOCX, SRT formats</span></li>
+            <li class="text-sm text-slate-300 flex items-center"><span class="feature-check">✓</span><span data-i18n="pricing_premium_features.3">24-hour delivery</span></li>
+            <li class="text-sm text-slate-300 flex items-center"><span class="feature-check">✓</span><span data-i18n="pricing_premium_features.4">Dedicated support</span></li>
+            <li class="text-sm text-slate-300 flex items-center"><span class="feature-check">✓</span><span data-i18n="pricing_premium_features.5">Speaker identification</span></li>
+            <li class="text-sm text-slate-300 flex items-center"><span class="feature-check">✓</span><span data-i18n="pricing_premium_features.6">Timestamps</span></li>
+            <li class="text-sm text-slate-300 flex items-center"><span class="feature-check">✓</span><span data-i18n="pricing_premium_features.7">Custom formatting</span></li>
+          </ul>
+          <button class="gradient-btn w-full text-sm py-3" data-i18n="pricing_cta">Get started</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="upload" class="py-24 px-6">
+    <div class="max-w-2xl mx-auto">
+      <h2 class="text-3xl md:text-4xl font-bold text-center mb-4 scroll-reveal" data-i18n="upload_title">Get your transcript</h2>
+      <p class="text-center text-slate-400 mb-12 scroll-reveal" data-i18n="upload_subtitle">Upload your audio file and we will transcribe it for you</p>
+      <div class="glass-card p-8 scroll-reveal">
+        <div class="drop-zone" id="dropZone">
+          <svg class="mx-auto mb-4" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#00D4AA" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <p class="text-slate-300 font-medium mb-1" data-i18n="upload_drop_zone">Drag and drop your audio file here</p>
+          <p class="text-slate-500 text-sm" data-i18n="upload_drop_zone_alt">or click to browse</p>
+          <p class="text-slate-500 text-xs mt-4" data-i18n="upload_file_types">MP3, WAV, M4A, OGG, FLAC (max 500MB)</p>
+          <input type="file" id="fileInput" accept=".mp3,.wav,.m4a,.ogg,.flac" class="hidden" />
+        </div>
+        <div id="fileInfo" class="hidden mt-4 p-4 bg-navy-700 rounded-xl flex items-center gap-3">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00D4AA" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span id="fileName" class="text-sm text-slate-300 flex-1"></span>
+          <button onclick="clearFile()" class="text-slate-400 hover:text-red-400 transition"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+          <div>
+            <label class="block text-sm text-slate-400 mb-2" data-i18n="upload_language">Language</label>
+            <select id="langSelect" class="w-full bg-navy-700 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-300 focus:outline-none focus:border-mint-400/50">
+              <option value="en" data-i18n="upload_language_en">English</option>
+              <option value="es" data-i18n="upload_language_es">Spanish</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm text-slate-400 mb-2" data-i18n="upload_format">Output format</label>
+            <select id="formatSelect" class="w-full bg-navy-700 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-300 focus:outline-none focus:border-mint-400/50">
+              <option value="txt" data-i18n="upload_format_txt">TXT</option>
+              <option value="docx" data-i18n="upload_format_docx">DOCX</option>
+              <option value="srt" data-i18n="upload_format_srt">SRT (subtitles)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm text-slate-400 mb-2" data-i18n="upload_turnaround">Delivery time</label>
+            <select id="turnaroundSelect" class="w-full bg-navy-700 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-300 focus:outline-none focus:border-mint-400/50">
+              <option value="24" data-i18n="upload_turnaround_24">24 hours</option>
+              <option value="48" data-i18n="upload_turnaround_48">48 hours</option>
+              <option value="72" selected data-i18n="upload_turnaround_72">72 hours</option>
+            </select>
+          </div>
+        </div>
+        <div class="mt-6 p-4 bg-navy-700/50 rounded-xl">
+          <div class="flex justify-between items-center">
+            <span class="text-sm text-slate-400" data-i18n="upload_calculator">Estimated price</span>
+            <span id="priceDisplay" class="text-xl font-bold gradient-text">$0.00</span>
+          </div>
+        </div>
+        <div class="mt-6">
+          <label class="block text-sm text-slate-400 mb-2" data-i18n="upload_email">Your email</label>
+          <input type="email" id="emailInput" placeholder="your@email.com" class="w-full bg-navy-700 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-300 focus:outline-none focus:border-mint-400/50 placeholder:text-slate-500" />
+        </div>
+        <button id="submitBtn" class="gradient-btn w-full mt-6" data-i18n="upload_submit">Submit order</button>
+        <div id="successMsg" class="hidden mt-4 p-4 bg-mint-400/10 border border-mint-400/20 rounded-xl text-center text-mint-400 text-sm" data-i18n="upload_submit_success">Order submitted successfully! Check your email for updates.</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="testimonials" class="py-24 px-6">
+    <div class="max-w-6xl mx-auto">
+      <h2 class="text-3xl md:text-4xl font-bold text-center mb-12 scroll-reveal" data-i18n="testimonials_title">What our clients say</h2>
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="glass-card p-8 scroll-reveal">
+          <div class="flex gap-1 mb-4">
+            <span class="text-yellow-400">★</span><span class="text-yellow-400">★</span><span class="text-yellow-400">★</span><span class="text-yellow-400">★</span><span class="text-yellow-400">★</span>
+          </div>
+          <p class="text-slate-300 text-sm leading-relaxed mb-6" data-i18n="testimonial_1_text">"TranscribeAI saved me hours every week. The quality is outstanding and the turnaround is incredibly fast."</p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-mint-400 to-violet-500 flex items-center justify-center text-sm font-bold text-navy-900">MC</div>
+            <div><p class="text-sm font-medium text-slate-300" data-i18n="testimonial_1_name">Maria C.</p><p class="text-xs text-slate-500" data-i18n="testimonial_1_role">Podcaster</p></div>
+          </div>
+        </div>
+        <div class="glass-card p-8 scroll-reveal">
+          <div class="flex gap-1 mb-4">
+            <span class="text-yellow-400">★</span><span class="text-yellow-400">★</span><span class="text-yellow-400">★</span><span class="text-yellow-400">★</span><span class="text-yellow-400">★</span>
+          </div>
+          <p class="text-slate-300 text-sm leading-relaxed mb-6" data-i18n="testimonial_2_text">"As a lawyer, I need accurate transcriptions of depositions. This service is a game changer."</p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-mint-400 to-violet-500 flex items-center justify-center text-sm font-bold text-navy-900">CR</div>
+            <div><p class="text-sm font-medium text-slate-300" data-i18n="testimonial_2_name">Carlos R.</p><p class="text-xs text-slate-500" data-i18n="testimonial_2_role">Attorney</p></div>
+          </div>
+        </div>
+        <div class="glass-card p-8 scroll-reveal">
+          <div class="flex gap-1 mb-4">
+            <span class="text-yellow-400">★</span><span class="text-yellow-400">★</span><span class="text-yellow-400">★</span><span class="text-yellow-400">★</span><span class="text-yellow-400">★</span>
+          </div>
+          <p class="text-slate-300 text-sm leading-relaxed mb-6" data-i18n="testimonial_3_text">"The bilingual support is incredible. I can submit files in Spanish and get English transcripts back."</p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-mint-400 to-violet-500 flex items-center justify-center text-sm font-bold text-navy-900">AL</div>
+            <div><p class="text-sm font-medium text-slate-300" data-i18n="testimonial_3_name">Ana L.</p><p class="text-xs text-slate-500" data-i18n="testimonial_3_role">Researcher</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq" class="py-24 px-6">
+    <div class="max-w-2xl mx-auto">
+      <h2 class="text-3xl md:text-4xl font-bold text-center mb-12 scroll-reveal" data-i18n="faq_title">Frequently asked questions</h2>
+      <div class="space-y-0">
+        <div class="faq-item scroll-reveal">
+          <button class="faq-toggle w-full flex justify-between items-center py-5 text-left" onclick="toggleFaq(this)">
+            <span class="text-sm font-medium text-slate-300" data-i18n="faq_q1">What audio formats do you accept?</span>
+            <svg class="w-5 h-5 text-slate-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-answer"><p class="text-sm text-slate-400" data-i18n="faq_a1">We accept MP3, WAV, M4A, OGG, and FLAC files up to 500MB.</p></div>
+        </div>
+        <div class="faq-item scroll-reveal">
+          <button class="faq-toggle w-full flex justify-between items-center py-5 text-left" onclick="toggleFaq(this)">
+            <span class="text-sm font-medium text-slate-300" data-i18n="faq_q2">How accurate is the transcription?</span>
+            <svg class="w-5 h-5 text-slate-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-answer"><p class="text-sm text-slate-400" data-i18n="faq_a2">Our AI achieves 95%+ accuracy for Basic, 98%+ for Standard, and 99%+ for Premium plans.</p></div>
+        </div>
+        <div class="faq-item scroll-reveal">
+          <button class="faq-toggle w-full flex justify-between items-center py-5 text-left" onclick="toggleFaq(this)">
+            <span class="text-sm font-medium text-slate-300" data-i18n="faq_q3">How fast is the delivery?</span>
+            <svg class="w-5 h-5 text-slate-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-answer"><p class="text-sm text-slate-400" data-i18n="faq_a3">Basic: 72 hours. Standard: 48 hours. Premium: 24 hours. We also offer rush delivery for an additional fee.</p></div>
+        </div>
+        <div class="faq-item scroll-reveal">
+          <button class="faq-toggle w-full flex justify-between items-center py-5 text-left" onclick="toggleFaq(this)">
+            <span class="text-sm font-medium text-slate-300" data-i18n="faq_q4">Is my data secure?</span>
+            <svg class="w-5 h-5 text-slate-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-answer"><p class="text-sm text-slate-400" data-i18n="faq_a4">Yes. We never share or store your files longer than necessary. All uploads are encrypted.</p></div>
+        </div>
+        <div class="faq-item scroll-reveal">
+          <button class="faq-toggle w-full flex justify-between items-center py-5 text-left" onclick="toggleFaq(this)">
+            <span class="text-sm font-medium text-slate-300" data-i18n="faq_q5">Can I request revisions?</span>
+            <svg class="w-5 h-5 text-slate-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-answer"><p class="text-sm text-slate-400" data-i18n="faq_a5">Absolutely. We offer up to 2 free revisions on all plans.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="border-t border-white/5 py-12 px-6">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="flex items-center gap-2">
+        <img src="assets/logo.svg" alt="TranscribeAI" width="24" height="24" />
+        <span class="text-sm text-slate-400">TranscribeAI</span>
+      </div>
+      <div class="flex items-center gap-6">
+        <a href="#" class="text-sm text-slate-500 hover:text-slate-300 transition">Privacy</a>
+        <a href="#" class="text-sm text-slate-500 hover:text-slate-300 transition">Terms</a>
+        <a href="mailto:abimeletchlopez@gmail.com" class="text-sm text-slate-500 hover:text-slate-300 transition">Contact</a>
+      </div>
+      <p class="text-xs text-slate-600" data-i18n="footer_rights">All rights reserved.</p>
+    </div>
+    <div class="max-w-6xl mx-auto mt-6 text-center">
+      <p class="text-xs text-slate-600" data-i18n="footer_powered">Powered by TranscribeAI</p>
+    </div>
+  </footer>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

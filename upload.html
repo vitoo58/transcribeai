@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upload — TranscribeAI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: { 900: '#0B0E1A', 800: '#131829', 700: '#1A1F35' },
+            mint: { 400: '#00D4AA', 500: '#10B981' },
+            violet: { 500: '#7C5CFC' },
+            slate: { 300: '#E8ECF4', 400: '#94A3B8', 500: '#6B7A99' }
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: #0B0E1A; color: #E8ECF4; overflow-x: hidden; }
+    .glass { background: rgba(19, 24, 41, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.06); }
+    .gradient-text { background: linear-gradient(135deg, #00D4AA, #7C5CFC); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .gradient-btn { background: linear-gradient(135deg, #00D4AA, #10B981); color: #0B0E1A; font-weight: 600; border: none; border-radius: 12px; padding: 14px 32px; cursor: pointer; transition: all 0.3s ease; font-size: 16px; font-family: 'Inter', sans-serif; }
+    .gradient-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0, 212, 170, 0.3); }
+    .gradient-btn-outline { background: transparent; color: #00D4AA; border: 1.5px solid #00D4AA; border-radius: 12px; padding: 14px 32px; cursor: pointer; transition: all 0.3s ease; font-size: 16px; font-weight: 500; font-family: 'Inter', sans-serif; }
+    .gradient-btn-outline:hover { background: rgba(0, 212, 170, 0.1); transform: translateY(-2px); }
+    .drop-zone { border: 2px dashed rgba(0, 212, 170, 0.3); border-radius: 16px; padding: 48px; text-align: center; transition: all 0.3s ease; cursor: pointer; }
+    .drop-zone:hover, .drop-zone.dragover { border-color: #00D4AA; background: rgba(0, 212, 170, 0.05); }
+    .lang-toggle { display: flex; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 3px; }
+    .lang-toggle button { padding: 6px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; border: none; background: transparent; color: #94A3B8; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+    .lang-toggle button.active { background: rgba(0, 212, 170, 0.15); color: #00D4AA; }
+    .theme-toggle { width: 44px; height: 24px; border-radius: 12px; background: rgba(255,255,255,0.1); position: relative; cursor: pointer; border: none; transition: background 0.3s; }
+    .theme-toggle .dot { width: 18px; height: 18px; border-radius: 50%; background: #00D4AA; position: absolute; top: 3px; left: 3px; transition: transform 0.3s; }
+    .theme-toggle.light .dot { transform: translateX(20px); background: #F59E0B; }
+    .theme-toggle.light { background: rgba(245, 158, 11, 0.2); }
+    .toast { position: fixed; bottom: 32px; right: 32px; padding: 16px 24px; border-radius: 12px; background: #131829; border: 1px solid rgba(0, 212, 170, 0.3); color: #E8ECF4; font-size: 14px; z-index: 1000; transform: translateY(100px); opacity: 0; transition: all 0.4s ease; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .progress-bar { height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #00D4AA, #7C5CFC); border-radius: 2px; transition: width 0.5s ease; width: 0%; }
+    @media (max-width: 768px) { .hero-title { font-size: 2rem !important; } }
+  </style>
+</head>
+<body>
+  <nav class="glass fixed top-0 left-0 right-0 z-50 px-6 py-4">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-2">
+        <img src="assets/logo.svg" alt="TranscribeAI" width="28" height="28" />
+        <span class="font-bold text-lg text-slate-300">TranscribeAI</span>
+      </a>
+      <div class="flex items-center gap-3">
+        <div class="lang-toggle">
+          <button id="lang-en" class="active" onclick="setLanguage('en')">EN</button>
+          <button id="lang-es" onclick="setLanguage('es')">ES</button>
+        </div>
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">
+          <div class="dot"></div>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="pt-24 pb-16 px-6 min-h-screen">
+    <div class="max-w-2xl mx-auto">
+      <div class="text-center mb-10">
+        <h1 class="text-3xl md:text-4xl font-bold mb-3 gradient-text" data-i18n="upload_title">Get your transcript</h1>
+        <p class="text-slate-400" data-i18n="upload_subtitle">Upload your audio file and we will transcribe it for you</p>
+      </div>
+
+      <div class="glass-card p-8">
+        <div class="drop-zone" id="dropZone">
+          <svg class="mx-auto mb-4" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#00D4AA" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <p class="text-slate-300 font-medium mb-1" data-i18n="upload_drop_zone">Drag and drop your audio file here</p>
+          <p class="text-slate-500 text-sm" data-i18n="upload_drop_zone_alt">or click to browse</p>
+          <p class="text-slate-500 text-xs mt-4" data-i18n="upload_file_types">MP3, WAV, M4A, OGG, FLAC (max 500MB)</p>
+          <input type="file" id="fileInput" accept=".mp3,.wav,.m4a,.ogg,.flac" class="hidden" />
+        </div>
+
+        <div id="fileInfo" class="hidden mt-4 p-4 bg-navy-700 rounded-xl flex items-center gap-3">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00D4AA" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span id="fileName" class="text-sm text-slate-300 flex-1"></span>
+          <span id="fileSize" class="text-xs text-slate-500"></span>
+          <button onclick="clearFile()" class="text-slate-400 hover:text-red-400 transition"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+          <div>
+            <label class="block text-sm text-slate-400 mb-2" data-i18n="upload_language">Language</label>
+            <select id="langSelect" class="w-full bg-navy-700 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-300 focus:outline-none focus:border-mint-400/50">
+              <option value="en" data-i18n="upload_language_en">English</option>
+              <option value="es" data-i18n="upload_language_es">Spanish</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm text-slate-400 mb-2" data-i18n="upload_format">Output format</label>
+            <select id="formatSelect" class="w-full bg-navy-700 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-300 focus:outline-none focus:border-mint-400/50">
+              <option value="txt" data-i18n="upload_format_txt">TXT</option>
+              <option value="docx" data-i18n="upload_format_docx">DOCX</option>
+              <option value="srt" data-i18n="upload_format_srt">SRT (subtitles)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm text-slate-400 mb-2" data-i18n="upload_turnaround">Delivery time</label>
+            <select id="turnaroundSelect" class="w-full bg-navy-700 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-300 focus:outline-none focus:border-mint-400/50">
+              <option value="24" data-i18n="upload_turnaround_24">24 hours</option>
+              <option value="48" data-i18n="upload_turnaround_48">48 hours</option>
+              <option value="72" selected data-i18n="upload_turnaround_72">72 hours</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mt-6 p-4 bg-navy-700/50 rounded-xl">
+          <div class="flex justify-between items-center">
+            <span class="text-sm text-slate-400" data-i18n="upload_calculator">Estimated price</span>
+            <span id="priceDisplay" class="text-xl font-bold gradient-text">$0.00</span>
+          </div>
+        </div>
+
+        <div class="mt-6">
+          <label class="block text-sm text-slate-400 mb-2" data-i18n="upload_email">Your email</label>
+          <input type="email" id="emailInput" placeholder="your@email.com" class="w-full bg-navy-700 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-300 focus:outline-none focus:border-mint-400/50 placeholder:text-slate-500" />
+        </div>
+
+        <div id="orderProgress" class="hidden mt-8">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm text-slate-400" data-i18n="upload_submit">Processing your order</span>
+            <span id="progressPercent" class="text-sm font-semibold gradient-text">0%</span>
+          </div>
+          <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+        </div>
+
+        <button id="submitBtn" class="gradient-btn w-full mt-6" data-i18n="upload_submit">Submit order</button>
+        <div id="successMsg" class="hidden mt-4 p-4 bg-mint-400/10 border border-mint-400/20 rounded-xl text-center text-mint-400 text-sm" data-i18n="upload_submit_success">Order submitted successfully! Check your email for updates.</div>
+      </div>
+
+      <div class="mt-8 text-center">
+        <a href="track.html" class="text-sm text-mint-400 hover:text-mint-300 transition inline-flex items-center gap-2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Track an existing order
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <footer class="border-t border-white/5 py-8 px-6">
+    <div class="max-w-4xl mx-auto text-center">
+      <p class="text-xs text-slate-600">© 2026 TranscribeAI. <span data-i18n="footer_rights">All rights reserved.</span></p>
+    </div>
+  </footer>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

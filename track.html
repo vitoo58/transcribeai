@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Track Order — TranscribeAI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: { 900: '#0B0E1A', 800: '#131829', 700: '#1A1F35' },
+            mint: { 400: '#00D4AA', 500: '#10B981' },
+            violet: { 500: '#7C5CFC' },
+            slate: { 300: '#E8ECF4', 400: '#94A3B8', 500: '#6B7A99' }
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: #0B0E1A; color: #E8ECF4; overflow-x: hidden; }
+    .glass { background: rgba(19, 24, 41, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.06); }
+    .gradient-text { background: linear-gradient(135deg, #00D4AA, #7C5CFC); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .gradient-btn { background: linear-gradient(135deg, #00D4AA, #10B981); color: #0B0E1A; font-weight: 600; border: none; border-radius: 12px; padding: 14px 32px; cursor: pointer; transition: all 0.3s ease; font-size: 16px; font-family: 'Inter', sans-serif; }
+    .gradient-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0, 212, 170, 0.3); }
+    .lang-toggle { display: flex; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 3px; }
+    .lang-toggle button { padding: 6px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; border: none; background: transparent; color: #94A3B8; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+    .lang-toggle button.active { background: rgba(0, 212, 170, 0.15); color: #00D4AA; }
+    .theme-toggle { width: 44px; height: 24px; border-radius: 12px; background: rgba(255,255,255,0.1); position: relative; cursor: pointer; border: none; transition: background 0.3s; }
+    .theme-toggle .dot { width: 18px; height: 18px; border-radius: 50%; background: #00D4AA; position: absolute; top: 3px; left: 3px; transition: transform 0.3s; }
+    .theme-toggle.light .dot { transform: translateX(20px); background: #F59E0B; }
+    .theme-toggle.light { background: rgba(245, 158, 11, 0.2); }
+    .status-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .status-dot.received { background: #6B7A99; }
+    .status-dot.processing { background: #F59E0B; animation: pulse 1.5s infinite; }
+    .status-dot.ready { background: #00D4AA; }
+    .status-dot.delivered { background: #7C5CFC; }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.3); } }
+    .timeline-line { width: 2px; background: rgba(255,255,255,0.06); margin-left: 19px; }
+    .timeline-item { position: relative; padding-left: 40px; padding-bottom: 32px; }
+    .timeline-item::before { content: ''; position: absolute; left: 14px; top: 28px; bottom: 0; width: 2px; background: rgba(255,255,255,0.06); }
+    .timeline-item:last-child::before { display: none; }
+    .timeline-dot { position: absolute; left: 8px; top: 6px; }
+    .toast { position: fixed; bottom: 32px; right: 32px; padding: 16px 24px; border-radius: 12px; background: #131829; border: 1px solid rgba(0, 212, 170, 0.3); color: #E8ECF4; font-size: 14px; z-index: 1000; transform: translateY(100px); opacity: 0; transition: all 0.4s ease; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    @media (max-width: 768px) { .hero-title { font-size: 2rem !important; } }
+  </style>
+</head>
+<body>
+  <nav class="glass fixed top-0 left-0 right-0 z-50 px-6 py-4">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-2">
+        <img src="assets/logo.svg" alt="TranscribeAI" width="28" height="28" />
+        <span class="font-bold text-lg text-slate-300">TranscribeAI</span>
+      </a>
+      <div class="flex items-center gap-3">
+        <div class="lang-toggle">
+          <button id="lang-en" class="active" onclick="setLanguage('en')">EN</button>
+          <button id="lang-es" onclick="setLanguage('es')">ES</button>
+        </div>
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">
+          <div class="dot"></div>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="pt-24 pb-16 px-6 min-h-screen">
+    <div class="max-w-2xl mx-auto">
+      <div class="text-center mb-10">
+        <h1 class="text-3xl md:text-4xl font-bold mb-3 gradient-text" data-i18n="track_title">Track your order</h1>
+        <p class="text-slate-400" data-i18n="track_subtitle">Enter your order ID to check the status</p>
+      </div>
+
+      <div class="glass-card p-8">
+        <div class="flex gap-3">
+          <input type="text" id="orderIdInput" placeholder="Enter your order ID" class="flex-1 bg-navy-700 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-300 focus:outline-none focus:border-mint-400/50 placeholder:text-slate-500 font-mono" />
+          <button id="trackBtn" class="gradient-btn whitespace-nowrap" data-i18n="track_btn">Track</button>
+        </div>
+        <div id="orderNotFound" class="hidden mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-center text-red-400 text-sm">Order not found. Please check your order ID and try again.</div>
+      </div>
+
+      <div id="orderDetails" class="hidden mt-8">
+        <div class="glass-card p-8">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Order ID</p>
+              <p id="detailOrderId" class="font-mono text-sm text-mint-400"></p>
+            </div>
+            <div id="detailStatus" class="flex items-center gap-2">
+              <div class="status-dot"></div>
+              <span class="text-sm font-medium"></span>
+            </div>
+          </div>
+
+          <div class="space-y-0">
+            <div class="timeline-item" id="step1">
+              <div class="timeline-dot status-dot received"></div>
+              <p class="text-sm font-medium text-slate-300" data-i18n="track_status_received">Order received</p>
+              <p class="text-xs text-slate-500 mt-1" id="detailReceived"></p>
+            </div>
+            <div class="timeline-line"></div>
+            <div class="timeline-item" id="step2">
+              <div class="timeline-dot status-dot"></div>
+              <p class="text-sm font-medium text-slate-300" data-i18n="track_status_processing">Processing</p>
+              <p class="text-xs text-slate-500 mt-1" id="detailProcessing"></p>
+            </div>
+            <div class="timeline-line"></div>
+            <div class="timeline-item" id="step3">
+              <div class="timeline-dot status-dot"></div>
+              <p class="text-sm font-medium text-slate-300" data-i18n="track_status_ready">Ready for download</p>
+              <p class="text-xs text-slate-500 mt-1" id="detailReady"></p>
+            </div>
+          </div>
+
+          <div id="downloadSection" class="hidden mt-8 pt-6 border-t border-white/5">
+            <button class="gradient-btn w-full" onclick="showToast('Download started!')" data-i18n="upload_submit">Download transcript</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-8 text-center">
+        <a href="index.html" class="text-sm text-mint-400 hover:text-mint-300 transition inline-flex items-center gap-2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          Back to upload
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <footer class="border-t border-white/5 py-8 px-6">
+    <div class="max-w-4xl mx-auto text-center">
+      <p class="text-xs text-slate-600">© 2026 TranscribeAI. <span data-i18n="footer_rights">All rights reserved.</span></p>
+    </div>
+  </footer>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="js/app.js"></script>
+  <script src="js/tracker.js"></script>
+</body>
+</html>
