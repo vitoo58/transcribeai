@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Upload — TranscribeAI</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -94,14 +95,14 @@
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
           <div>
             <label class="block text-sm text-slate-400 mb-2" data-i18n="upload_language">Language</label>
-            <select id="langSelect" class="w-full bg-navy-700 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-300 focus:outline-none focus:border-mint-400/50">
+            <select id="langSelect" class="w-full bg-navy-700 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-300 focus:outline-none focus:border-mint-400/50" data-i18n-options>
               <option value="en" data-i18n="upload_language_en">English</option>
               <option value="es" data-i18n="upload_language_es">Spanish</option>
             </select>
           </div>
           <div>
             <label class="block text-sm text-slate-400 mb-2" data-i18n="upload_format">Output format</label>
-            <select id="formatSelect" class="w-full bg-navy-700 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-300 focus:outline-none focus:border-mint-400/50">
+            <select id="formatSelect" class="w-full bg-navy-700 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-300 focus:outline-none focus:border-mint-400/50" data-i18n-options>
               <option value="txt" data-i18n="upload_format_txt">TXT</option>
               <option value="docx" data-i18n="upload_format_docx">DOCX</option>
               <option value="srt" data-i18n="upload_format_srt">SRT (subtitles)</option>
@@ -109,7 +110,7 @@
           </div>
           <div>
             <label class="block text-sm text-slate-400 mb-2" data-i18n="upload_turnaround">Delivery time</label>
-            <select id="turnaroundSelect" class="w-full bg-navy-700 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-300 focus:outline-none focus:border-mint-400/50">
+            <select id="turnaroundSelect" class="w-full bg-navy-700 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-300 focus:outline-none focus:border-mint-400/50" data-i18n-options>
               <option value="24" data-i18n="upload_turnaround_24">24 hours</option>
               <option value="48" data-i18n="upload_turnaround_48">48 hours</option>
               <option value="72" selected data-i18n="upload_turnaround_72">72 hours</option>
@@ -123,6 +124,7 @@
             <span id="priceDisplay" class="text-xl font-bold gradient-text">$0.00</span>
           </div>
         </div>
+        <p id="detailDuration" class="text-xs text-slate-500 mt-3 text-center"></p>
 
         <div class="mt-6">
           <label class="block text-sm text-slate-400 mb-2" data-i18n="upload_email">Your email</label>
@@ -138,7 +140,12 @@
         </div>
 
         <button id="submitBtn" class="gradient-btn w-full mt-6" data-i18n="upload_submit">Submit order</button>
-        <div id="successMsg" class="hidden mt-4 p-4 bg-mint-400/10 border border-mint-400/20 rounded-xl text-center text-mint-400 text-sm" data-i18n="upload_submit_success">Order submitted successfully! Check your email for updates.</div>
+        <div id="successMsg" class="hidden mt-4 p-4 bg-mint-400/10 border border-mint-400/20 rounded-xl text-center">
+          <p class="text-mint-400 text-sm mb-1" data-i18n="upload_submit_success">Order submitted successfully! Check your email for updates.</p>
+          <p class="text-slate-400 text-xs mb-2" data-i18n="upload_order_id">Your order ID</p>
+          <p id="successOrderId" class="font-mono text-sm text-mint-300 mb-3 break-all"></p>
+          <a id="successTrackLink" href="track.html" class="inline-block text-sm text-mint-400 underline" data-i18n="upload_track_link">Track your order</a>
+        </div>
       </div>
 
       <div class="mt-8 text-center">
@@ -158,6 +165,7 @@
 
   <div id="toast" class="toast"></div>
 
+  <script src="js/orders.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

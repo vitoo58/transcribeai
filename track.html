@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Track Order — TranscribeAI</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -82,7 +83,7 @@
 
       <div class="glass-card p-8">
         <div class="flex gap-3">
-          <input type="text" id="orderIdInput" placeholder="Enter your order ID" class="flex-1 bg-navy-700 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-300 focus:outline-none focus:border-mint-400/50 placeholder:text-slate-500 font-mono" />
+          <input type="text" id="orderIdInput" placeholder="Enter your order ID" class="flex-1 bg-navy-700 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-300 focus:outline-none focus:border-mint-400/50 placeholder:text-slate-500 font-mono" data-i18n="track_placeholder" />
           <button id="trackBtn" class="gradient-btn whitespace-nowrap" data-i18n="track_btn">Track</button>
         </div>
         <div id="orderNotFound" class="hidden mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-center text-red-400 text-sm">Order not found. Please check your order ID and try again.</div>
@@ -90,7 +91,7 @@
 
       <div id="orderDetails" class="hidden mt-8">
         <div class="glass-card p-8">
-          <div class="flex items-center justify-between mb-6">
+          <div class="flex items-center justify-between mb-2">
             <div>
               <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Order ID</p>
               <p id="detailOrderId" class="font-mono text-sm text-mint-400"></p>
@@ -100,6 +101,8 @@
               <span class="text-sm font-medium"></span>
             </div>
           </div>
+          <p id="detailFile" class="text-sm text-slate-300 mb-1"></p>
+          <p id="detailMeta" class="text-xs text-slate-500 mb-4"></p>
 
           <div class="space-y-0">
             <div class="timeline-item" id="step1">
@@ -122,7 +125,7 @@
           </div>
 
           <div id="downloadSection" class="hidden mt-8 pt-6 border-t border-white/5">
-            <button class="gradient-btn w-full" onclick="showToast('Download started!')" data-i18n="upload_submit">Download transcript</button>
+            <button id="downloadBtn" class="gradient-btn w-full" data-i18n="track_download">Download transcript</button>
           </div>
         </div>
       </div>
@@ -144,6 +147,8 @@
 
   <div id="toast" class="toast"></div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="js/orders.js"></script>
   <script src="js/app.js"></script>
   <script src="js/tracker.js"></script>
 </body>
