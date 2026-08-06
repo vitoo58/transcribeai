@@ -162,6 +162,13 @@
           <p class="text-mint-400 text-sm mb-1" data-i18n="upload_submit_success">Order submitted successfully! Check your email for updates.</p>
           <p class="text-slate-400 text-xs mb-2" data-i18n="upload_order_id">Your order ID</p>
           <p id="successOrderId" class="font-mono text-sm text-mint-300 mb-3 break-all"></p>
+          <div id="authCodeWrap" class="hidden mb-3">
+            <p class="text-slate-400 text-xs mb-1" data-i18n="upload_auth_code">Your access code (save it to track/edit from another device)</p>
+            <div class="flex items-center justify-center gap-2">
+              <p id="successAuthCode" class="font-mono text-xs text-mint-300 break-all"></p>
+              <button id="copyAuthBtn" type="button" class="text-xs text-mint-400 underline shrink-0" data-i18n="upload_copy">Copy</button>
+            </div>
+          </div>
           <a id="successTrackLink" href="track.html" class="inline-block text-sm text-mint-400 underline" data-i18n="upload_track_link">Track your order</a>
         </div>
       </div>

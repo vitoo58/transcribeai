@@ -41,6 +41,7 @@ server.listen(PORT, async () => {
     const up = await dump(base + 'upload.html');
     checks.push(['upload trial banner', up.includes('id="trialBanner"')]);
     checks.push(['upload transcribe area', up.includes('transcribeBtn')]);
+    checks.push(['upload auth code block', up.includes('authCodeWrap') && up.includes('copyAuthBtn')]);
     checks.push(['upload scripts config+trial', up.indexOf('js/config.js') !== -1 && up.indexOf('js/trial.js') !== -1]);
 
     const tr = await dump(base + 'track.html');

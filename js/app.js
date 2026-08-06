@@ -217,6 +217,46 @@ function updatePrice() {
   }
 }
 
+function showSuccess(order) {
+  const success = document.getElementById('successMsg');
+  const successId = document.getElementById('successOrderId');
+  const successLink = document.getElementById('successTrackLink');
+  const authWrap = document.getElementById('authCodeWrap');
+  const authCode = document.getElementById('successAuthCode');
+  const copyBtn = document.getElementById('copyAuthBtn');
+  if (successId) successId.textContent = order.id;
+  const showCode = code => {
+    if (authWrap && authCode && code) {
+      authCode.textContent = code;
+      authWrap.classList.remove('hidden');
+    }
+  };
+  if (order.authCode) {
+    showCode(order.authCode);
+  } else if (order._sync) {
+    order._sync.then(() => {
+      showCode(order.authCode);
+      if (order.authCode && successLink && successLink.href) {
+        successLink.href = (successLink.getAttribute('data-base') || 'track.html') + '?id=' + encodeURIComponent(order.id) + '&code=' + encodeURIComponent(order.authCode);
+      }
+    }).catch(() => {});
+  }
+  if (successLink && successLink.href) {
+    const base = successLink.getAttribute('data-base') || 'track.html';
+    successLink.href = base + '?id=' + encodeURIComponent(order.id) +
+      (order.authCode ? '&code=' + encodeURIComponent(order.authCode) : '');
+  }
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      if (!authCode || !authCode.textContent) return;
+      (navigator.clipboard ? navigator.clipboard.writeText(authCode.textContent) : Promise.resolve())
+        .then(() => { copyBtn.textContent = t('upload_copied', 'Copied!'); setTimeout(() => { copyBtn.textContent = t('upload_copy', 'Copy'); }, 1500); })
+        .catch(() => {});
+    });
+  }
+  if (success) success.classList.remove('hidden');
+}
+
 function submitOrder() {
   const emailEl = document.getElementById('emailInput');
   const email = emailEl ? emailEl.value.trim() : '';
@@ -278,13 +318,10 @@ function submitOrder() {
           btn.disabled = false;
           btn.textContent = t('upload_submit');
         }
-        if (successId) successId.textContent = order.id;
-        if (successLink && successLink.href) successLink.href = 'track.html?id=' + encodeURIComponent(order.id);
-        if (success) success.classList.remove('hidden');
+        showSuccess(order);
         if (selectedFile) clearFile();
         if (emailEl) emailEl.value = '';
         showToast(t('upload_submit_success'));
-        if (success) success.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 600);
     }
   }, 350);
@@ -426,11 +463,8 @@ function runTranscription() {
     const success = document.getElementById('successMsg');
     const successId = document.getElementById('successOrderId');
     const successLink = document.getElementById('successTrackLink');
-    if (successId) successId.textContent = order.id;
-    if (successLink) successLink.href = 'track.html?id=' + encodeURIComponent(order.id);
-    if (success) success.classList.remove('hidden');
+    showSuccess(order);
     showToast(t('upload_submit_success'));
-    if (success) success.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }).catch(err => {
     console.error('Transcription failed', err);
     if (status) status.textContent = t('whisper_error', 'Transcription failed. Check your connection and try again.');

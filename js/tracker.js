@@ -252,6 +252,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
   if (params.get('id')) {
     if (orderIdInput) orderIdInput.value = params.get('id');
+    const authField = document.getElementById('authCodeInput');
+    if (authField && params.get('code')) authField.value = params.get('code');
     trackOrder();
   }
 });
