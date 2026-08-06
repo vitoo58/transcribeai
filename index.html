@@ -261,6 +261,20 @@
           <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
         </div>
         <button id="submitBtn" class="gradient-btn w-full mt-6" data-i18n="upload_submit">Submit order</button>
+        <div class="mt-6">
+          <button id="transcribeBtn" class="gradient-btn-outline w-full" data-i18n="transcribeButton">Transcribe now (free, in your browser)</button>
+          <div id="transcribeProgress" class="hidden mt-4">
+            <div class="flex items-center justify-between mb-2">
+              <span id="transcribeStatus" class="text-sm text-slate-400"></span>
+              <span id="transcribePercent">0%</span>
+            </div>
+            <div class="progress-bar"><div id="transcribeFill" class="progress-fill"></div></div>
+          </div>
+          <select id="transcribeModel" class="mt-4 w-full bg-navy-700 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-300 focus:outline-none focus:border-mint-400/50">
+            <option value="tiny">Tiny (fast, lower quality)</option>
+            <option value="base">Base (balanced)</option>
+          </select>
+        </div>
         <div id="successMsg" class="hidden mt-4 p-4 bg-mint-400/10 border border-mint-400/20 rounded-xl text-center">
           <p class="text-mint-400 text-sm mb-1" data-i18n="upload_submit_success">Order submitted successfully! Check your email for updates.</p>
           <p class="text-slate-400 text-xs mb-2" data-i18n="upload_order_id">Your order ID</p>
@@ -373,6 +387,7 @@
   <div id="toast" class="toast"></div>
 
   <script src="js/orders.js"></script>
+  <script src="js/whisper.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

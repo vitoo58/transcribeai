@@ -16,45 +16,65 @@ function toSrtTime(sec) {
 
 function generateTranscript(order) {
   const fmt = order.format || 'txt';
-  const previewLines = [
-    t('preview_line1', 'Welcome to this transcribed audio.'),
-    t('preview_line2', 'The speaker introduces the main topics of todays session.'),
-    t('preview_line3', 'Key points are summarized and action items are defined.'),
-    t('preview_line4', 'The conversation concludes with a summary of next steps.')
-  ];
-  const total = order.durationSec || 30;
-  const per = total / 4;
 
   if (fmt === 'srt') {
-    let srt = '';
-    previewLines.forEach((line, i) => {
-      const start = i * per;
-      const end = (i + 1) * per;
-      srt += (i + 1) + '\n';
-      srt += toSrtTime(start) + ' --> ' + toSrtTime(end) + '\n';
-      srt += line + '\n\n';
-    });
+    const srt = order.srt || buildFallbackSrt(order);
     return { blob: new Blob([srt], { type: 'application/x-subrip' }), ext: 'srt' };
   }
 
-  if (fmt === 'docx') {
-    return buildDocx(order, previewLines);
+  if (fmt === 'txt') {
+    const txt = buildTxt(order);
+    return { blob: new Blob([txt], { type: 'text/plain' }), ext: 'txt' };
   }
 
-  const txt = [
+  if (fmt === 'docx') {
+    return buildDocx(order);
+  }
+
+  return { blob: new Blob([buildTxt(order)], { type: 'text/plain' }), ext: 'txt' };
+}
+
+function buildTxt(order) {
+  const body = order.transcript
+    ? order.transcript
+    : buildFallbackLines(order).join('\n');
+  return [
     'TranscribeAI Transcript',
     'Order: ' + order.id,
     'File: ' + order.fileName,
     'Language: ' + (order.lang === 'es' ? 'Spanish' : 'English'),
     '',
-    ...previewLines,
+    body,
     '',
     '--- End of transcript ---'
   ].join('\n');
-  return { blob: new Blob([txt], { type: 'text/plain' }), ext: 'txt' };
 }
 
-async function buildDocx(order, previewLines) {
+function buildFallbackSrt(order) {
+  const lines = buildFallbackLines(order);
+  const total = order.durationSec || 30;
+  const per = total / lines.length;
+  let srt = '';
+  lines.forEach((line, i) => {
+    const start = i * per;
+    const end = (i + 1) * per;
+    srt += (i + 1) + '\n';
+    srt += toSrtTime(start) + ' --> ' + toSrtTime(end) + '\n';
+    srt += line + '\n\n';
+  });
+  return srt;
+}
+
+function buildFallbackLines(order) {
+  return [
+    t('preview_line1', 'Welcome to this transcribed audio.'),
+    t('preview_line2', 'The speaker introduces the main topics of todays session.'),
+    t('preview_line3', 'Key points are summarized and action items are defined.'),
+    t('preview_line4', 'The conversation concludes with a summary of next steps.')
+  ];
+}
+
+async function buildDocx(order) {
   if (!window.JSZip) return null;
   const zip = new JSZip();
 
@@ -74,14 +94,8 @@ async function buildDocx(order, previewLines) {
     '</Relationships>'
   ].join(''));
 
-  const body = [
-    para(order.fileName || 'Transcription', true),
-    para('Order: ' + order.id),
-    para(''),
-    ...previewLines.map(l => para(l)),
-    para(''),
-    para('--- End of transcript ---')
-  ].join('');
+  const txt = buildTxt(order);
+  const body = txt.split('\n').map(line => para(line, false)).join('');
 
   zip.file('word/document.xml', [
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',

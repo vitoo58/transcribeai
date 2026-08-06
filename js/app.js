@@ -289,6 +289,89 @@ function submitOrder() {
   }, 350);
 }
 
+function initForm() {
+  const submitBtn = document.getElementById('submitBtn');
+  if (!submitBtn) return;
+  submitBtn.addEventListener('click', submitOrder);
+}
+
+function initTranscriber() {
+  const btn = document.getElementById('transcribeBtn');
+  if (!btn) return;
+  btn.addEventListener('click', runTranscription);
+}
+
+function setTranscribe(el, val) {
+  if (!el) return;
+  el.value = val + '%';
+  if (el.hasAttribute('value') || el.tagName !== 'INPUT') el.textContent = val + '%';
+  const fill = document.getElementById('transcribeFill');
+  if (fill) fill.style.width = val + '%';
+}
+
+function runTranscription() {
+  if (!selectedFile) {
+    showToast(t('upload_toast_file'));
+    return;
+  }
+  const btn = document.getElementById('transcribeBtn');
+  const block = document.getElementById('transcribeProgress');
+  const status = document.getElementById('transcribeStatus');
+  const pctEl = document.getElementById('transcribePercent');
+  const modelSelect = document.getElementById('transcribeModel');
+  const langSelect = document.getElementById('langSelect');
+  const modelName = modelSelect ? modelSelect.value : 'tiny';
+  const lang = langSelect ? langSelect.value : (currentLang === 'es' ? 'es' : 'en');
+
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = t('transcribe_running', 'Transcribing...');
+  }
+  if (block) block.classList.remove('hidden');
+  setTranscribe(pctEl, 3);
+
+  Whisper.transcribe(selectedFile, Whisper.models[modelName], lang, info => {
+    setTranscribe(pctEl, info.pct >= 0 ? info.pct : 15);
+    if (status) status.textContent = t('whisper_' + info.stage, info.stage);
+  }).then(result => {
+    const order = Orders.create({
+      email: document.getElementById('emailInput')?.value || '',
+      fileName: selectedFile.name,
+      durationSec: audioDurationSec > 0 ? Math.round(audioDurationSec) : null,
+      durationLabel: formatDuration(audioDurationSec) || '~5 min',
+      format: document.getElementById('formatSelect')?.value || 'txt',
+      lang: lang,
+      turnaround: parseInt(document.getElementById('turnaroundSelect')?.value || '72'),
+      price: document.getElementById('priceDisplay')?.textContent || '$0.00'
+    });
+    Orders.complete(order.id, { text: result.text, chunks: result.chunks, srt: result.srt });
+
+    setTranscribe(pctEl, 100);
+    if (status) status.textContent = t('whisper_done', 'Transcription complete!');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = t('transcribeButton', 'Transcribe now (free, in your browser)');
+    }
+
+    const success = document.getElementById('successMsg');
+    const successId = document.getElementById('successOrderId');
+    const successLink = document.getElementById('successTrackLink');
+    if (successId) successId.textContent = order.id;
+    if (successLink) successLink.href = 'track.html?id=' + encodeURIComponent(order.id);
+    if (success) success.classList.remove('hidden');
+    if (btn) btn.disabled = true;
+    showToast(t('upload_submit_success'));
+    if (success) success.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }).catch(err => {
+    console.error('Transcription failed', err);
+    if (status) status.textContent = t('whisper_error', 'Transcription failed. Check your connection and try again.');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = t('transcribeButton', 'Transcribe now (free, in your browser)');
+    }
+  });
+}
+
 function initFaq() {
   document.querySelectorAll('.faq-toggle').forEach(btn => {
     btn.addEventListener('click', () => toggleFaq(btn));
@@ -332,6 +415,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   initDropZone();
   initForm();
+  initTranscriber();
   initFaq();
   initScrollReveal();
   initTrackLinks();
