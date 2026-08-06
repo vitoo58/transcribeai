@@ -10,6 +10,7 @@ fetch('js/i18n.json')
     translations.en = data.en;
     translations.es = data.es;
     applyTranslations();
+    renderTrialBanner();
   });
 
 function t(key, fallback) {
@@ -301,6 +302,51 @@ function initTranscriber() {
   btn.addEventListener('click', runTranscription);
 }
 
+function initTrial() {
+  renderTrialBanner();
+}
+
+function startTrial() {
+  Trial.start();
+  renderTrialBanner();
+  showToast(t('trial_try_free'));
+}
+
+function trialBannerText() {
+  const st = Trial.status();
+  if (st.usesExpired) return t('trial_used_up');
+  if (st.timeExpired) return t('trial_expired');
+  if (st.daysLeft === 1) return t('trial_banner_day');
+  if (st.daysLeft === 0) return t('trial_banner_today');
+  return t('trial_banner')
+    .replace('{{left}}', String(st.daysLeft))
+    .replace('{{rem}}', String(st.remainingTranscripts))
+    .replace('{{s}}', st.remainingTranscripts === 1 ? '' : 's');
+}
+
+function renderTrialBanner() {
+  const banner = document.getElementById('trialBanner');
+  if (!banner) return;
+  if (!Config.trial.enabled) {
+    banner.classList.add('hidden');
+    return;
+  }
+  const st = Trial.status();
+  banner.classList.remove('hidden');
+  if (st.startedAt === null) {
+    banner.innerHTML =
+      '<div style="background:linear-gradient(90deg,rgba(0,212,170,.15),rgba(124,92,252,.15));border:1px solid rgba(0,212,170,.3);border-radius:12px;max-width:640px;margin:16px auto 0;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">' +
+      '<span class="text-sm" style="color:#E8ECF4">' + t('trial_offer').replace('{{days}}', String(Config.trial.days)) + '</span>' +
+      '<button onclick="startTrial()" style="background:linear-gradient(135deg,#00D4AA,#10B981);color:#0B0E1A;font-weight:600;border:none;border-radius:8px;padding:8px 18px;cursor:pointer;font-family:inherit">' + t('trial_try_free') + '</button>' +
+      '</div>';
+    return;
+  }
+  banner.innerHTML =
+    '<div style="background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.25);border-radius:12px;max-width:640px;margin:16px auto 0;padding:10px 20px;text-align:center">' +
+    '<span class="text-sm">' + trialBannerText() + '</span>' +
+    '</div>';
+}
+
 function setTranscribe(el, val) {
   if (!el) return;
   el.value = val + '%';
@@ -312,6 +358,13 @@ function setTranscribe(el, val) {
 function runTranscription() {
   if (!selectedFile) {
     showToast(t('upload_toast_file'));
+    return;
+  }
+  const tStatus = Trial.status();
+  if (Config.trial.enabled && tStatus.expired) {
+    showToast(tStatus.usesExpired ? t('trial_used_up') : t('trial_expired'));
+    const banner = document.getElementById('trialBanner');
+    if (banner) banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
   const btn = document.getElementById('transcribeBtn');
@@ -345,6 +398,8 @@ function runTranscription() {
       price: document.getElementById('priceDisplay')?.textContent || '$0.00'
     });
     Orders.complete(order.id, { text: result.text, chunks: result.chunks, srt: result.srt });
+    Trial.registerUse();
+    renderTrialBanner();
 
     setTranscribe(pctEl, 100);
     if (status) status.textContent = t('whisper_done', 'Transcription complete!');
@@ -359,7 +414,6 @@ function runTranscription() {
     if (successId) successId.textContent = order.id;
     if (successLink) successLink.href = 'track.html?id=' + encodeURIComponent(order.id);
     if (success) success.classList.remove('hidden');
-    if (btn) btn.disabled = true;
     showToast(t('upload_submit_success'));
     if (success) success.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }).catch(err => {
@@ -416,6 +470,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initDropZone();
   initForm();
   initTranscriber();
+  initTrial();
   initFaq();
   initScrollReveal();
   initTrackLinks();

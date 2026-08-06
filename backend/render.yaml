@@ -1,0 +1,9 @@
+build: node --version
+start: node server.js
+env:
+  - key: TRIAL_DAYS
+    value: 7
+  - key: MAX_FREE_TRANSCRIPTS
+    value: 3
+  - key: CORS_ORIGIN
+    value: "*"
