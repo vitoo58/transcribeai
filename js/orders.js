@@ -55,8 +55,8 @@ const Orders = (() => {
 
   function pushOrder(order) {
     const base = api();
-    if (!base) return;
-    fetch(base + '/api/orders', {
+    if (!base) return Promise.resolve();
+    const p = fetch(base + '/api/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -69,19 +69,30 @@ const Orders = (() => {
         price: order.price || '$0.00'
       })
     }).then(r => r.json()).then(remote => {
-      if (remote && remote.id) order.remoteId = remote.id;
+      if (remote && remote.id) {
+        order.remoteId = remote.id;
+        order.authCode = remote.authCode || '';
+        saveUpdate(order);
+      }
     }).catch(() => {});
+    order._sync = p;
+    return p;
   }
 
   function pushTranscript(order) {
     const base = api();
     if (!base) return;
-    const id = order.remoteId || order.id;
-    fetch(base + '/api/orders/' + encodeURIComponent(id) + '/transcript', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: order.transcript, chunks: order.chunks, srt: order.srt })
-    }).catch(() => {});
+    const wait = order._sync || Promise.resolve();
+    wait.then(() => {
+      const id = order.remoteId || order.id;
+      const headers = { 'Content-Type': 'application/json' };
+      if (order.authCode) headers['X-Auth-Token'] = order.authCode;
+      fetch(base + '/api/orders/' + encodeURIComponent(id) + '/transcript', {
+        method: 'PUT',
+        headers: headers,
+        body: JSON.stringify({ text: order.transcript, chunks: order.chunks, srt: order.srt })
+      }).catch(() => {});
+    });
   }
 
   const saveUpdate = order => {

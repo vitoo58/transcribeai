@@ -333,18 +333,33 @@ function renderTrialBanner() {
   }
   const st = Trial.status();
   banner.classList.remove('hidden');
+  banner.textContent = '';
+
+  const box = document.createElement('div');
+  box.style.cssText = 'background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.25);border-radius:12px;max-width:640px;margin:16px auto 0;padding:10px 20px;text-align:center';
+  const textEl = document.createElement('span');
+  textEl.className = 'text-sm';
   if (st.startedAt === null) {
-    banner.innerHTML =
-      '<div style="background:linear-gradient(90deg,rgba(0,212,170,.15),rgba(124,92,252,.15));border:1px solid rgba(0,212,170,.3);border-radius:12px;max-width:640px;margin:16px auto 0;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">' +
-      '<span class="text-sm" style="color:#E8ECF4">' + t('trial_offer').replace('{{days}}', String(Config.trial.days)) + '</span>' +
-      '<button onclick="startTrial()" style="background:linear-gradient(135deg,#00D4AA,#10B981);color:#0B0E1A;font-weight:600;border:none;border-radius:8px;padding:8px 18px;cursor:pointer;font-family:inherit">' + t('trial_try_free') + '</button>' +
-      '</div>';
+    box.style.background = 'linear-gradient(90deg,rgba(0,212,170,.15),rgba(124,92,252,.15))';
+    box.style.borderColor = 'rgba(0,212,170,.3)';
+    box.style.display = 'flex';
+    box.style.alignItems = 'center';
+    box.style.justifyContent = 'space-between';
+    box.style.gap = '16px';
+    box.style.flexWrap = 'wrap';
+    textEl.textContent = t('trial_offer').replace('{{days}}', String(Config.trial.days));
+    const btn = document.createElement('button');
+    btn.textContent = t('trial_try_free');
+    btn.style.cssText = 'background:linear-gradient(135deg,#00D4AA,#10B981);color:#0B0E1A;font-weight:600;border:none;border-radius:8px;padding:8px 18px;cursor:pointer;font-family:inherit';
+    btn.addEventListener('click', startTrial);
+    box.appendChild(textEl);
+    box.appendChild(btn);
+    banner.appendChild(box);
     return;
   }
-  banner.innerHTML =
-    '<div style="background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.25);border-radius:12px;max-width:640px;margin:16px auto 0;padding:10px 20px;text-align:center">' +
-    '<span class="text-sm">' + trialBannerText() + '</span>' +
-    '</div>';
+  textEl.textContent = trialBannerText();
+  box.appendChild(textEl);
+  banner.appendChild(box);
 }
 
 function setTranscribe(el, val) {

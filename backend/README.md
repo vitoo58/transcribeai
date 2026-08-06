@@ -32,10 +32,22 @@ up from `$PORT` automatically.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET  | `/api/trial` | Trial limits |
-| POST | `/api/orders` | Create an order (returns `{id}`) |
-| GET  | `/api/orders/:id` | Get order status |
-| PUT  | `/api/orders/:id/transcript` | Save the transcript (marks ready) |
+| GET  | `/api/trial` | Trial limits (no auth) |
+| POST | `/api/orders` | Create an order (returns `{id, authCode}`) |
+| GET  | `/api/orders/:id` | Get order (requires `X-Auth-Token` header) |
+| PUT  | `/api/orders/:id/transcript` | Save the transcript (requires `X-Auth-Token`) |
+| DELETE | `/api/orders/:id` | Delete the order (requires `X-Auth-Token`) |
 
-Orders are stored in `backend/data/orders.json` (capped at 500). CORS is wide-open so
-GitHub Pages can call it.
+## Security
+
+- **Per-order auth**: `POST /api/orders` returns a random `authCode` (48 hex chars).
+  All reads/writes/deletes of an order require it via the `X-Auth-Token` header.
+  The `authCode` is never returned by GET/PUT responses. The frontend stores it in
+  `localStorage` and sends it automatically.
+- **Rate limiting**: 60 requests/min per IP (`RATE_LIMIT_PER_MIN`), returns 429.
+- **Input validation**: email regex, 5MB body cap, field length caps, transcript size caps.
+- **Write serialization**: all store mutations are queued to avoid lost updates.
+- **Security headers**: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
+  `Referrer-Policy: no-referrer`, `Cache-Control: no-store`.
+- Data is stored plaintext on disk (`backend/data/orders.json`, capped at 500 orders).
+  For production use a database and TLS (Render provides HTTPS automatically).

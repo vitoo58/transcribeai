@@ -1,5 +1,6 @@
 const Whisper = (() => {
   const TRANSFORMERS_URL = 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js';
+  const TRANSFORMERS_SRI = 'sha384-Vcjc/igTnNpWsiZipZ+UkMn/2IRLqYYjMGBKd4hAHA+NXZE47u8DF0PpTmE4aW7U';
 
   let transcriber = null;
   let currentModel = null;
@@ -9,10 +10,28 @@ const Whisper = (() => {
     try { onMsg(info); } catch (e) {}
   };
 
+  async function verifyAndLoad() {
+    message({ stage: 'model' });
+    const res = await fetch(TRANSFORMERS_URL, { cache: 'force-cache' });
+    if (!res.ok) throw new Error('transformers download failed (' + res.status + ')');
+    const buf = await res.arrayBuffer();
+    const digest = await crypto.subtle.digest('SHA-384', buf);
+    const b64 = btoa(String.fromCharCode(...new Uint8Array(digest)));
+    if (('sha384-' + b64) !== TRANSFORMERS_SRI) {
+      throw new Error('transformers integrity check failed');
+    }
+    const blobUrl = URL.createObjectURL(new Blob([buf], { type: 'text/javascript' }));
+    try {
+      return await import(blobUrl);
+    } finally {
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+    }
+  }
+
   async function loadTranscriber(model) {
     if (transcriber && currentModel === model) return transcriber;
     message({ stage: 'model' });
-    const mod = await import(TRANSFORMERS_URL);
+    const mod = await verifyAndLoad();
     mod.env.allowLocalModels = false;
     mod.env.useBrowserCache = true;
     mod.env.useFuseCache = false;

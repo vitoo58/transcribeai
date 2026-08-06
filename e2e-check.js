@@ -33,7 +33,7 @@ server.listen(PORT, async () => {
   try {
     const idx = await dump(base + 'index.html');
     checks.push(['index hero', idx.includes('hero-title')]);
-    checks.push(['index try free', idx.includes('startTrial')]);
+    checks.push(['index try free', idx.includes('trial_try_free') || idx.includes('>Try free<') || idx.includes('days of unlimited free transcription')]);
     checks.push(['index banner offer', idx.includes('days of unlimited free transcription')]);
     checks.push(['index transcribe btn', idx.includes('transcribeBtn')]);
     checks.push(['index scripts config+trial', idx.indexOf('js/config.js') !== -1 && idx.indexOf('js/trial.js') !== -1 && idx.indexOf('js/config.js') < idx.indexOf('js/trial.js')]);

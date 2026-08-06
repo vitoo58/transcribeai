@@ -173,7 +173,14 @@ function renderOrder(order) {
 
   if (statusEl) {
     const st = statusLabels[status];
-    statusEl.innerHTML = '<div class="status-dot ' + st.dot + '"></div><span class="text-sm font-medium">' + t(st.key, st.label) + '</span>';
+    statusEl.textContent = '';
+    const dot = document.createElement('div');
+    dot.className = 'status-dot ' + st.dot;
+    const span = document.createElement('span');
+    span.className = 'text-sm font-medium';
+    span.textContent = t(st.key, st.label);
+    statusEl.appendChild(dot);
+    statusEl.appendChild(span);
   }
 
   ['step1', 'step2', 'step3'].forEach((id, i) => {

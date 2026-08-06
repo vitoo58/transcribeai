@@ -1,18 +1,13 @@
 const http = require('http');
 const { spawn } = require('child_process');
 
-const PORT = parseInt(process.env.PORT, 10) || 3999;
-
-function req(method, path, body) {
-  return new Promise((resolve, reject) => {
+function makeReq(port) {
+  return (method, path, body, token) => new Promise((resolve, reject) => {
     const data = body ? JSON.stringify(body) : null;
-    const r = http.request({
-      hostname: '127.0.0.1',
-      port: PORT,
-      path: path,
-      method: method,
-      headers: data ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } : {}
-    }, res => {
+    const headers = {};
+    if (data) { headers['Content-Type'] = 'application/json'; headers['Content-Length'] = Buffer.byteLength(data); }
+    if (token) headers['X-Auth-Token'] = token;
+    const r = http.request({ hostname: '127.0.0.1', port: port, path: path, method: method, headers: headers }, res => {
       let out = '';
       res.on('data', c => out += c);
       res.on('end', () => resolve({ status: res.statusCode, body: out ? JSON.parse(out) : null }));
@@ -25,58 +20,102 @@ function req(method, path, body) {
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
+async function waitReady(req) {
+  for (let i = 0; i < 30; i++) {
+    try { await req('GET', '/api/trial'); return; } catch (e) { await wait(400); }
+  }
+  throw new Error('server did not start');
+}
+
+let failures = 0;
+async function assert(cond, msg) {
+  if (cond) { console.log('ok:', msg); }
+  else { console.log('FAIL:', msg); failures++; }
+}
+
 async function main() {
+  const PORT = 3999;
   const child = spawn(process.execPath, ['server.js'], {
     cwd: __dirname,
     env: { ...process.env, PORT: String(PORT) },
     stdio: 'ignore'
   });
-
-  let ready = false;
-  for (let i = 0; i < 25; i++) {
-    try { await req('GET', '/api/trial'); ready = true; break; } catch (e) { await wait(400); }
-  }
-  if (!ready) { console.log('FAIL: server did not start'); child.kill(); process.exit(1); }
-
-  let orderId = null;
   try {
+    const req = makeReq(PORT);
+    await waitReady(req);
+
     const trial = await req('GET', '/api/trial');
-    console.log('trial:', JSON.stringify(trial.body));
-    if (!trial.body || typeof trial.body.trialDays !== 'number') throw new Error('bad trial');
+    await assert(trial.status === 200 && trial.body.trialDays === 7, 'trial endpoint works');
 
     const created = await req('POST', '/api/orders', {
       email: 'a@b.com', fileName: 'test.mp3', format: 'txt', lang: 'es', turnaround: 48, price: '$2.00'
     });
-    orderId = created.body && created.body.id;
-    console.log('create:', created.status, 'id=', orderId);
-    if (!orderId) throw new Error('no id returned');
+    await assert(created.status === 201, 'create order 201');
+    const id = created.body.id;
+    const auth = created.body.authCode;
+    await assert(!!auth && auth.length >= 40, 'authCode present in create response');
 
-    const found = await req('GET', '/api/orders/' + orderId);
-    console.log('get:', found.status, found.body && found.body.status);
-    if (found.status !== 200) throw new Error('get failed');
+    const pubNoAuth = await req('GET', '/api/orders/' + id);
+    await assert(pubNoAuth.status === 403, 'GET without auth => 403');
 
-    const missing = await req('GET', '/api/orders/NOPE');
-    console.log('404 on missing:', missing.status === 404);
-    if (missing.status !== 404) throw new Error('expected 404');
+    const pubWithAuth = await req('GET', '/api/orders/' + id, null, auth);
+    await assert(pubWithAuth.status === 200, 'GET with auth => 200');
+    await assert(pubWithAuth.body.authCode === undefined, 'authCode never leaked via GET');
 
-    const updated = await req('PUT', '/api/orders/' + orderId + '/transcript', {
-      text: 'Hola transcript', srt: '1\n00:00:00,000 --> 00:00:01,000\nHola\n\n', chunks: []
-    });
-    console.log('put transcript:', updated.status, 'status=', updated.body && updated.body.status);
-    if (updated.status !== 200 || updated.body.status !== 'ready') throw new Error('update failed');
+    const missing = await req('GET', '/api/orders/NOPE', null, auth);
+    await assert(missing.status === 404, '404 for unknown order');
 
-    const after = await req('GET', '/api/orders/' + orderId);
-    console.log('after ready:', after.body && after.body.status);
-    if (after.body.status !== 'ready') throw new Error('not ready after update');
+    const wrongToken = await req('PUT', '/api/orders/' + id + '/transcript', { text: 'x' }, 'wrong-token');
+    await assert(wrongToken.status === 403, 'PUT with wrong token => 403');
 
-    console.log('ALL BACKEND TESTS PASSED');
+    const put = await req('PUT', '/api/orders/' + id + '/transcript', { text: 'Hola transcript', srt: '', chunks: [] }, auth);
+    await assert(put.status === 200 && put.body.status === 'ready', 'PUT with auth marks ready');
+    await assert(put.body.authCode === undefined, 'authCode not in PUT response');
+
+    const badEmail = await req('POST', '/api/orders', { email: 'not-an-email' });
+    await assert(badEmail.status === 400, 'invalid email rejected with 400');
+
+    const hugeText = await req('PUT', '/api/orders/' + id + '/transcript', { text: 'x'.repeat(6 * 1024 * 1024) }, auth);
+    await assert(hugeText.status === 400, 'payload > 5MB rejected');
+
+    const deleteNoAuth = await req('DELETE', '/api/orders/' + id);
+    await assert(deleteNoAuth.status === 403, 'DELETE without auth => 403');
+
+    const del = await req('DELETE', '/api/orders/' + id, null, auth);
+    await assert(del.status === 200 && del.body.ok === true, 'DELETE with auth works');
+
+    const notFound = await req('GET', '/nope');
+    await assert(notFound.status === 404, 'non-api path 404');
+  } finally {
     child.kill();
-    process.exit(0);
-  } catch (e) {
-    console.log('FAIL:', e.message);
-    child.kill();
-    process.exit(1);
   }
 }
 
-main();
+async function testRateLimit() {
+  const PORT = 3998;
+  const child = spawn(process.execPath, ['server.js'], {
+    cwd: __dirname,
+    env: { ...process.env, PORT: String(PORT), RATE_LIMIT_PER_MIN: '3' },
+    stdio: 'ignore'
+  });
+  try {
+    const req = makeReq(PORT);
+    await waitReady(req);
+    let got429 = false;
+    for (let i = 0; i < 8; i++) {
+      const r = await req('GET', '/api/trial');
+      if (r.status === 429) { got429 = true; break; }
+    }
+    await assert(got429, 'rate limiting returns 429 after limit');
+  } finally {
+    child.kill();
+  }
+}
+
+(async () => {
+  await main();
+  await testRateLimit();
+  if (failures > 0) { console.log('TEST FAILURES: ' + failures); process.exit(1); }
+  console.log('ALL BACKEND TESTS PASSED');
+  process.exit(0);
+})();
