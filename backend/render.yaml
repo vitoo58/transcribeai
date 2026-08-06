@@ -9,3 +9,9 @@ env:
     value: "*"
   - key: RATE_LIMIT_PER_MIN
     value: 60
+  - key: MAX_ORDERS
+    value: 50000
+disk:
+  name: transcribeai-data
+  mountPath: /opt/render/project/src/data
+  sizeGB: 1

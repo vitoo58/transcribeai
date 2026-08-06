@@ -1,5 +1,7 @@
 const http = require('http');
 const { spawn } = require('child_process');
+const fs = require('fs');
+const path = require('path');
 
 function makeReq(port) {
   return (method, path, body, token) => new Promise((resolve, reject) => {
@@ -27,6 +29,14 @@ async function waitReady(req) {
   throw new Error('server did not start');
 }
 
+function spawnServer(port, extraEnv) {
+  return spawn(process.execPath, ['server.js'], {
+    cwd: __dirname,
+    env: { ...process.env, PORT: String(port), ...(extraEnv || {}) },
+    stdio: 'ignore'
+  });
+}
+
 let failures = 0;
 async function assert(cond, msg) {
   if (cond) { console.log('ok:', msg); }
@@ -35,11 +45,9 @@ async function assert(cond, msg) {
 
 async function main() {
   const PORT = 3999;
-  const child = spawn(process.execPath, ['server.js'], {
-    cwd: __dirname,
-    env: { ...process.env, PORT: String(PORT) },
-    stdio: 'ignore'
-  });
+  const dbFile = path.join(__dirname, 'data', 'orders-main.db');
+  if (fs.existsSync(dbFile)) fs.rmSync(dbFile, { force: true });
+  const child = spawnServer(PORT, { DB_FILE: dbFile });
   try {
     const req = makeReq(PORT);
     await waitReady(req);
@@ -94,6 +102,33 @@ async function main() {
   }
 }
 
+async function testPersistence() {
+  const PORT = 3997;
+  const dbFile = path.join(__dirname, 'data', 'orders-persist.db');
+  if (fs.existsSync(dbFile)) fs.rmSync(dbFile, { force: true });
+  let created = null;
+  let child = spawnServer(PORT, { DB_FILE: dbFile });
+  try {
+    const req = makeReq(PORT);
+    await waitReady(req);
+    const r = await req('POST', '/api/orders', { email: 'persist@x.com', fileName: 'keep.mp3', format: 'txt' });
+    created = r.body;
+    await assert(r.status === 201 && created.id, 'persistence: order created');
+  } finally {
+    child.kill();
+    await wait(800);
+  }
+  child = spawnServer(PORT, { DB_FILE: dbFile });
+  try {
+    const req = makeReq(PORT);
+    await waitReady(req);
+    const got = await req('GET', '/api/orders/' + created.id, null, created.authCode);
+    await assert(got.status === 200 && got.body.email === 'persist@x.com', 'persistence: order survives server restart');
+  } finally {
+    child.kill();
+  }
+}
+
 async function testRateLimit() {
   const PORT = 3998;
   const child = spawn(process.execPath, ['server.js'], {
@@ -118,6 +153,7 @@ async function testRateLimit() {
 (async () => {
   await main();
   await testRateLimit();
+  await testPersistence();
   if (failures > 0) { console.log('TEST FAILURES: ' + failures); process.exit(1); }
   console.log('ALL BACKEND TESTS PASSED');
   process.exit(0);
