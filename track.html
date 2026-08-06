@@ -86,7 +86,11 @@
           <input type="text" id="orderIdInput" placeholder="Enter your order ID" class="flex-1 bg-navy-700 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-300 focus:outline-none focus:border-mint-400/50 placeholder:text-slate-500 font-mono" data-i18n="track_placeholder" />
           <button id="trackBtn" class="gradient-btn whitespace-nowrap" data-i18n="track_btn">Track</button>
         </div>
-        <div id="orderNotFound" class="hidden mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-center text-red-400 text-sm">Order not found. Please check your order ID and try again.</div>
+        <div class="mt-3">
+          <label for="authCodeInput" class="text-xs text-slate-500 block mb-1" data-i18n="track_auth_label">Access code (if tracking from another device)</label>
+          <input type="text" id="authCodeInput" placeholder="Paste your access code" class="w-full bg-navy-700 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-300 focus:outline-none focus:border-mint-400/50 placeholder:text-slate-500 font-mono" data-i18n="track_auth_placeholder" />
+        </div>
+        <div id="orderNotFound" class="hidden mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-center text-red-400 text-sm" data-i18n="track_auth_error">Order not found. Check the order ID and access code.</div>
       </div>
 
       <div id="orderDetails" class="hidden mt-8">

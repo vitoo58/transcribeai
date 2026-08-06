@@ -102,6 +102,41 @@ const Orders = (() => {
     localStorage.setItem(KEY, JSON.stringify(all));
   };
 
+  async function fetchRemote(id, authCode) {
+    const base = api();
+    if (!base || !id || !authCode) return null;
+    try {
+      const r = await fetch(base + '/api/orders/' + encodeURIComponent(id), {
+        headers: { 'X-Auth-Token': authCode }
+      });
+      if (!r.ok) return null;
+      const data = await r.json();
+      return data && data.id ? data : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  const syncRemote = async order => {
+    if (!order || !order.authCode) return order;
+    const remoteId = order.remoteId || order.id;
+    const remote = await fetchRemote(remoteId, order.authCode);
+    if (!remote) return order;
+    let changed = false;
+    if (remote.transcript && remote.transcript !== order.transcript) {
+      order.transcript = remote.transcript;
+      order.chunks = remote.chunks || order.chunks || [];
+      order.srt = remote.srt || order.srt || '';
+      changed = true;
+    }
+    if (remote.status && remote.status !== order.status) {
+      order.status = remote.status;
+      changed = true;
+    }
+    if (changed) saveUpdate(order);
+    return order;
+  };
+
   const getStatus = order => order && order.status;
 
   const getSimulatedStatus = order => {
@@ -110,5 +145,5 @@ const Orders = (() => {
     return order.status || 'received';
   };
 
-  return { getAll, save, find, create, complete, getStatus, getSimulatedStatus, generateId };
+  return { getAll, save, find, create, complete, syncRemote, fetchRemote, getStatus, getSimulatedStatus, generateId };
 })();

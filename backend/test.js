@@ -62,6 +62,9 @@ async function main() {
     await assert(pubWithAuth.status === 200, 'GET with auth => 200');
     await assert(pubWithAuth.body.authCode === undefined, 'authCode never leaked via GET');
 
+    const shortLookup = await req('GET', '/api/orders/' + created.body.shortId, null, auth);
+    await assert(shortLookup.status === 200 && shortLookup.body.id === id, 'GET resolves by shortId');
+
     const missing = await req('GET', '/api/orders/NOPE', null, auth);
     await assert(missing.status === 404, '404 for unknown order');
 

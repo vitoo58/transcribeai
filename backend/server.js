@@ -107,6 +107,11 @@ function hasAuth(req, order) {
   return !!(token && order && order.authCode && token === order.authCode);
 }
 
+function findOrder(store, keyText) {
+  const key = keyText.toUpperCase();
+  return store.orders.find(o => o.id === key || o.shortId === key);
+}
+
 function calcRemaining(req) {
   const ip = clientIp(req);
   const bucket = rateBuckets.get(ip);
@@ -175,7 +180,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === 'GET' && parts[1] === 'orders' && parts[2] && !parts[3]) {
-      const order = readStore().orders.find(o => o.id === parts[2].toUpperCase());
+      const order = findOrder(readStore(), parts[2]);
       if (!order) return json(res, 404, { error: 'not found' });
       if (!hasAuth(req, order)) return json(res, 403, { error: 'forbidden' });
       return json(res, 200, publicOrder(order));
@@ -218,7 +223,7 @@ const server = http.createServer(async (req, res) => {
       if (body.text !== undefined && typeof body.text !== 'string') return json(res, 400, { error: 'invalid text' });
 
       const updated = await mutateStore(store => {
-        const order = store.orders.find(o => o.id === parts[2].toUpperCase());
+        const order = findOrder(store, parts[2]);
         if (!order) return { error: 'not_found' };
         if (!hasAuth(req, order)) return { error: 'forbidden' };
         order.transcript = String(body.text || '').slice(0, 5 * 1024 * 1024);
@@ -235,10 +240,10 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'DELETE' && parts[1] === 'orders' && parts[2]) {
       const deleted = await mutateStore(store => {
-        const idx = store.orders.findIndex(o => o.id === parts[2].toUpperCase());
-        if (idx === -1) return { error: 'not_found' };
-        const order = store.orders[idx];
+        const order = findOrder(store, parts[2]);
+        if (!order) return { error: 'not_found' };
         if (!hasAuth(req, order)) return { error: 'forbidden' };
+        const idx = store.orders.indexOf(order);
         store.orders.splice(idx, 1);
         return order;
       });

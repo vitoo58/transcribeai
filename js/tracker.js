@@ -115,8 +115,9 @@ function para(text, isTitle) {
   return '<w:p>' + runs + '</w:p>';
 }
 
-function trackOrder() {
+async function trackOrder() {
   const input = document.getElementById('orderIdInput');
+  const authInput = document.getElementById('authCodeInput');
   const notFound = document.getElementById('orderNotFound');
   const details = document.getElementById('orderDetails');
   if (!input || !details) return;
@@ -128,15 +129,33 @@ function trackOrder() {
     return;
   }
 
-  const order = Orders.find(orderId);
+  const authCode = authInput ? authInput.value.trim() : '';
+  const local = Orders.find(orderId);
   if (notFound) notFound.classList.add('hidden');
-  if (!order) {
+
+  if (!local) {
+    if (authCode) {
+      const remote = await Orders.fetchRemote(orderId, authCode);
+      if (remote) {
+        const merged = { ...remote, id: orderId };
+        if (notFound) notFound.classList.add('hidden');
+        renderOrder(merged);
+        return;
+      }
+    }
     if (notFound) notFound.classList.remove('hidden');
     details.classList.add('hidden');
     return;
   }
 
-  renderOrder(order);
+  renderOrder(local);
+  if (local.authCode) {
+    const synced = await Orders.syncRemote(local);
+    if (synced && JSON.stringify(synced) !== JSON.stringify(local)) {
+      renderOrder(synced);
+      showToast(t('track_sync', 'Synced from server'));
+    }
+  }
 }
 
 function renderOrder(order) {

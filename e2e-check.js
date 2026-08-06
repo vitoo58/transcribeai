@@ -45,6 +45,7 @@ server.listen(PORT, async () => {
 
     const tr = await dump(base + 'track.html');
     checks.push(['track order form', tr.includes('orderIdInput')]);
+    checks.push(['track auth code field', tr.includes('authCodeInput') && tr.includes('track_auth_label')]);
     checks.push(['track scripts config+trial', tr.indexOf('js/config.js') !== -1 && tr.indexOf('js/trial.js') !== -1]);
 
     // trial expiration gating: set localStorage then reload
